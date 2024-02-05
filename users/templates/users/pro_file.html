@@ -1,0 +1,170 @@
+{% extends 'users/base.html' %}
+{% load static %}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+{% block css %}
+<link href="{% static 'vendor/css/profile.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-7">
+            <h4 class="mt-3 mb-3">Профиль</h4>
+            <div class="col-lg-12 text-center">
+                <img width="100" height="100"
+                     src="data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_1765bc6c014%20text%20%7B%20fill%3Argba(255%2C255%2C255%2C.75)%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A10pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_1765bc6c014%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23777%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%2274.421875%22%20y%3D%22104.65%22%3E200x200%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"
+                     class="img-thumbnail">
+            </div>
+            <form action="{% url 'users:profile'%}" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                <div class="form-row">
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <label class="small mb-1" for="{{ forms.firstname.id_for_label }}">Имя</label>
+                            {{ forms.firstname }}
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <label class="small mb-1" for="{{ forms.surname.id_for_label }}">Фамилия</label>
+                            {{ forms.surname }}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-lg-12">
+                        <div class="custom-file">
+                            {{ forms.profile_picture }}
+                            <label class="custom-file-label" for="{{ forms.profile_picture.id_for_label }}">Выберите изображение</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-lg-6">
+                        <label class="small mb-1" for="{{ forms.username.id_for_label }}">Имя пользователя</label>
+                        {{ forms.username }}
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="small mb-1" for="{{ forms.email.id_for_label }}">Адрес электронной
+                            почты</label>
+                        {{ forms.email }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-lg-12" style="margin-top: 33px;">
+                        <input class="btn btn-info btn-block" type="submit" value="Сохранить">
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% if cart_content_count %}
+        <div class="col-lg-5">
+            <h4 class="mt-3 mb-3 d-flex justify-content-between align-items-center mb-3">
+                Корзина <span class="badge badge-secondary badge-pill">{{ cart_content_count }}</span>
+            </h4>
+            {% for item in cart_info %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.product.name }}</h5>
+                    <p class="card-text">{{ item.product.descriptions }}</p>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-light">
+                        <div class="row text-center">
+                            <div class="col-lg-4">
+<!--                                <input name="basketID" type="number" class="form-control"-->
+<!--                                       value="1" min="0"> #ценник-->
+                                <input type="number" class="price_input form-control" id="product-quantity-{{ forloop.counter }}"
+                                       name="quantity" value="{{ item.quantity }}"
+                                       min="1" oninput="updateCart_{{ forloop.counter }}()">
+                                <script>
+                                      function updateCart_{{ forloop.counter }}() {
+                                        const quantity_{{ forloop.counter }} = document.getElementById('product-quantity-{{ forloop.counter }}').value;
+                                        console.log(quantity_{{ forloop.counter }});
+                                        $.ajax({
+                                          type: "GET",
+                                          url: "{% url 'cart:cart_upd_data' %}",
+                                          data: { product_id: {{ item.product.id }}, quantity: quantity_{{ forloop.counter }},
+                                          },
+                                        });
+                                      }
+                                </script>
+                            </div>
+                            <div class="product_price col-lg-4" id="product-availability-{{ forloop.counter }}">{{ item.product.price }}</div>
+                            <script>
+                                    const quantityInput_{{ forloop.counter }} = document.getElementById('product-quantity-{{ forloop.counter }}');
+                                    const priceElement_{{ forloop.counter }} = document.getElementById('product-availability-{{ forloop.counter }}');
+                                    quantityInput_{{ forloop.counter }}.addEventListener('input', function () {
+                                        const quantity = parseInt(quantityInput_{{ forloop.counter }}.value);
+                                        const pricePerItem = parseFloat("{{ item.product.price }}");
+                                        const totalPrice = quantity * pricePerItem;
+                                        priceElement_{{ forloop.counter }}.textContent = `${totalPrice.toFixed(2)}`;
+                                    });
+                                </script>
+                            <div class="col-lg-4">
+                                <a href="{% url 'cart:remove_from_cart' item.product.id %}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            {% endfor %}
+            <div class="card mb-3">
+                <div class="card-footer">
+                    <p class="float-left">Итого</p>
+                    <h4 class="float-right" id="totalPrice">{{ cart_info.get_total_price }}</h4>
+                    <script>
+                        // Get a NodeList of elements with the attribute name starting with "price_input"
+                        var elements = document.querySelectorAll('.price_input');
+
+                        var elements_price = document.querySelectorAll('.product_price');
+                        // Get the total price element
+                        var totalPriceElement = document.getElementById('totalPrice');
+
+                        // Loop through the NodeList and add an event listener to each element
+                        elements.forEach(function(element) {
+                            element.addEventListener('input', function() {
+
+                                // Your event handling code here
+                            updateTotalPrice();
+                            });
+                        });
+
+                        // Function to update the total price
+                        function updateTotalPrice() {
+                            // Your logic to calculate the total price goes here
+                            var newTotalPrice = calculateTotalPrice();
+
+                            // Update the content of the total price element
+                            totalPriceElement.textContent = newTotalPrice;
+                        }
+
+                        // Example function to calculate the total price (you need to replace this with your actual logic)
+                        function calculateTotalPrice() {
+
+                            // Replace this with your actual logic to calculate the total price
+                            var total = 0;
+                            elements_price.forEach(function(element) {
+
+                                total += parseFloat(element.innerText) || 0;
+                            });
+                            return total;
+                        }
+                    </script>
+                </div>
+            </div>
+            <a class="btn btn-success btn-lg float-right" href="{% url 'orders:order_created' %}">
+                Оформить заказ
+            </a>
+            {% else %}
+            <h4 class="mt-3 mb-3 text-center">
+                    Ваша корзина пуста
+            </h4>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
